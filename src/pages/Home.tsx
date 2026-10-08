@@ -48,6 +48,13 @@ import { LeadDetails } from '../components/leads/LeadDetails'
 import { LEADS_DATA } from '../data/leadsData'
 import type { LeadFilterState, LeadItem } from '../types/lead'
 
+// Companies components
+import { CompaniesFilterSidebar } from '../components/companies/CompaniesFilterSidebar'
+import { CompaniesList } from '../components/companies/CompaniesList'
+import { CompanyDetails } from '../components/companies/CompanyDetails'
+import { COMPANIES_DATA } from '../data/companiesData'
+import type { CompanyFilterState, CompanyItem } from '../types/company'
+
 const INITIAL_DEV_FILTERS: DevelopmentFilterState = {
   searchQuery: '',
   cities: [],
@@ -92,6 +99,14 @@ const INITIAL_LEAD_FILTERS: LeadFilterState = {
   owners: [],
 }
 
+const INITIAL_COMPANY_FILTERS: CompanyFilterState = {
+  searchQuery: '',
+  companyTypes: [],
+  cities: [],
+  ownerNames: [],
+  projectRanges: [],
+}
+
 export const Home: React.FC = () => {
   const [activeNav, setActiveNav] = useState('Home')
 
@@ -120,6 +135,11 @@ export const Home: React.FC = () => {
   const [leadFilters, setLeadFilters] = useState<LeadFilterState>(INITIAL_LEAD_FILTERS)
   const [mobileLeadFilterOpen, setMobileLeadFilterOpen] = useState(false)
 
+  // Companies state
+  const [selectedCompany, setSelectedCompany] = useState<CompanyItem | null>(null)
+  const [companyFilters, setCompanyFilters] = useState<CompanyFilterState>(INITIAL_COMPANY_FILTERS)
+  const [mobileCompanyFilterOpen, setMobileCompanyFilterOpen] = useState(false)
+
   // Handle switching navigation tabs
   const handleNavSelect = (item: string) => {
     setActiveNav(item)
@@ -128,6 +148,7 @@ export const Home: React.FC = () => {
     if (item === 'Buildings' && !selectedBuilding) setSelectedBuilding(null)
     if (item === 'Contacts' && !selectedContact) setSelectedContact(null)
     if (item === 'Leads' && !selectedLead) setSelectedLead(null)
+    if (item === 'Companies' && !selectedCompany) setSelectedCompany(null)
   }
 
   // Filter developments
@@ -200,6 +221,25 @@ export const Home: React.FC = () => {
     return true
   })
 
+  // Filter companies
+  const filteredCompanies = COMPANIES_DATA.filter((comp) => {
+    if (companyFilters.companyTypes.length > 0 && !companyFilters.companyTypes.includes(comp.type)) return false
+    if (companyFilters.cities.length > 0 && !companyFilters.cities.includes(comp.city)) return false
+    if (companyFilters.ownerNames.length > 0 && !companyFilters.ownerNames.includes(comp.ownerName)) return false
+    if (companyFilters.projectRanges.length > 0) {
+      const match = companyFilters.projectRanges.some((r) => {
+        if (r === '0-5') return comp.noOfProjects <= 5
+        if (r === '6-10') return comp.noOfProjects >= 6 && comp.noOfProjects <= 10
+        if (r === '11-20') return comp.noOfProjects >= 11 && comp.noOfProjects <= 20
+        if (r === '21+') return comp.noOfProjects >= 21
+        return true
+      })
+      if (!match) return false
+    }
+    if (companyFilters.searchQuery && !comp.name.toLowerCase().includes(companyFilters.searchQuery.toLowerCase())) return false
+    return true
+  })
+
   return (
     <div className="min-h-screen bg-[#F4F5F8] flex flex-col font-sans text-slate-800">
       {/* Top Navbar */}
@@ -250,6 +290,56 @@ export const Home: React.FC = () => {
                     leads={filteredLeads}
                     onSelectLead={(l) => setSelectedLead(l)}
                     onToggleMobileFilter={() => setMobileLeadFilterOpen(!mobileLeadFilterOpen)}
+                  />
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* VIEW: COMPANIES */}
+        {activeNav === 'Companies' && (
+          <div>
+            {selectedCompany ? (
+              /* Company Details View */
+              <CompanyDetails
+                company={selectedCompany}
+                onBack={() => setSelectedCompany(null)}
+              />
+            ) : (
+              /* Companies List with Filter Sidebar */
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-5">
+                {/* Desktop Left Sidebar */}
+                <div className="hidden lg:block lg:col-span-3">
+                  <CompaniesFilterSidebar
+                    filters={companyFilters}
+                    onFilterChange={setCompanyFilters}
+                    onApplyFilters={() => {}}
+                    onResetFilters={() => setCompanyFilters(INITIAL_COMPANY_FILTERS)}
+                  />
+                </div>
+
+                {/* Mobile Filter Drawer */}
+                {mobileCompanyFilterOpen && (
+                  <div className="lg:hidden col-span-12">
+                    <CompaniesFilterSidebar
+                      filters={companyFilters}
+                      onFilterChange={setCompanyFilters}
+                      onApplyFilters={() => setMobileCompanyFilterOpen(false)}
+                      onResetFilters={() => {
+                        setCompanyFilters(INITIAL_COMPANY_FILTERS)
+                        setMobileCompanyFilterOpen(false)
+                      }}
+                    />
+                  </div>
+                )}
+
+                {/* Main List */}
+                <div className="lg:col-span-9">
+                  <CompaniesList
+                    companies={filteredCompanies}
+                    onSelectCompany={(c) => setSelectedCompany(c)}
+                    onToggleMobileFilter={() => setMobileCompanyFilterOpen(!mobileCompanyFilterOpen)}
                   />
                 </div>
               </div>
@@ -518,6 +608,7 @@ export const Home: React.FC = () => {
           activeNav !== 'Attorney Firms' &&
           activeNav !== 'Contacts' &&
           activeNav !== 'Leads' &&
+          activeNav !== 'Companies' &&
           activeNav !== 'Reports' &&
           activeNav !== 'Units' && (
             <div className="bg-white rounded-2xl p-8 border border-slate-100 text-center space-y-3">
