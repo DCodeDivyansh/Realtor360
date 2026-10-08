@@ -34,6 +34,13 @@ import { BuildingDetails } from '../components/buildings/BuildingDetails'
 import { BUILDINGS_DATA } from '../data/buildingsData'
 import type { BuildingFilterState, BuildingItem } from '../types/building'
 
+// Contacts components
+import { ContactsFilterSidebar } from '../components/contacts/ContactsFilterSidebar'
+import { ContactsList } from '../components/contacts/ContactsList'
+import { ContactDetails } from '../components/contacts/ContactDetails'
+import { CONTACTS_DATA } from '../data/contactsData'
+import type { ContactFilterState, ContactItem } from '../types/contact'
+
 const INITIAL_DEV_FILTERS: DevelopmentFilterState = {
   searchQuery: '',
   cities: [],
@@ -61,6 +68,15 @@ const INITIAL_BUILDING_FILTERS: BuildingFilterState = {
   unitRanges: [],
 }
 
+const INITIAL_CONTACT_FILTERS: ContactFilterState = {
+  searchQuery: '',
+  statuses: [],
+  roles: [],
+  assignedTo: [],
+  cities: [],
+  leadSources: [],
+}
+
 export const Home: React.FC = () => {
   const [activeNav, setActiveNav] = useState('Home')
 
@@ -79,6 +95,11 @@ export const Home: React.FC = () => {
   const [buildingFilters, setBuildingFilters] = useState<BuildingFilterState>(INITIAL_BUILDING_FILTERS)
   const [mobileBuildingFilterOpen, setMobileBuildingFilterOpen] = useState(false)
 
+  // Contacts state
+  const [selectedContact, setSelectedContact] = useState<ContactItem | null>(null)
+  const [contactFilters, setContactFilters] = useState<ContactFilterState>(INITIAL_CONTACT_FILTERS)
+  const [mobileContactFilterOpen, setMobileContactFilterOpen] = useState(false)
+
   // Handle switching navigation tabs
   const handleNavSelect = (item: string) => {
     setActiveNav(item)
@@ -91,9 +112,12 @@ export const Home: React.FC = () => {
     if (item === 'Buildings' && !selectedBuilding) {
       setSelectedBuilding(null)
     }
+    if (item === 'Contacts' && !selectedContact) {
+      setSelectedContact(null)
+    }
   }
 
-  // Filter developments based on sidebar filters
+  // Filter developments
   const filteredDevelopments = DEVELOPMENTS_DATA.filter((dev) => {
     if (devFilters.cities.length > 0 && !devFilters.cities.includes(dev.city)) return false
     if (devFilters.types.length > 0 && !devFilters.types.includes(dev.type)) return false
@@ -143,6 +167,16 @@ export const Home: React.FC = () => {
     return true
   })
 
+  // Filter contacts
+  const filteredContacts = CONTACTS_DATA.filter((c) => {
+    if (contactFilters.statuses.length > 0 && !contactFilters.statuses.includes(c.status)) return false
+    if (contactFilters.roles.length > 0 && !contactFilters.roles.includes(c.role)) return false
+    if (contactFilters.assignedTo.length > 0 && !contactFilters.assignedTo.some((a) => c.assignedTo.includes(a))) return false
+    if (contactFilters.cities.length > 0 && !contactFilters.cities.includes(c.city)) return false
+    if (contactFilters.leadSources.length > 0 && !contactFilters.leadSources.includes(c.leadSource)) return false
+    return true
+  })
+
   return (
     <div className="min-h-screen bg-[#F4F5F8] flex flex-col font-sans text-slate-800">
       {/* Top Navbar */}
@@ -150,6 +184,56 @@ export const Home: React.FC = () => {
 
       {/* Main Content Area */}
       <main className="flex-1 max-w-[1720px] w-full mx-auto p-3 sm:p-4 md:p-5 lg:p-6">
+        {/* VIEW: CONTACTS */}
+        {activeNav === 'Contacts' && (
+          <div>
+            {selectedContact ? (
+              /* Contact Details View (John Doe) */
+              <ContactDetails
+                contact={selectedContact}
+                onBack={() => setSelectedContact(null)}
+              />
+            ) : (
+              /* Contacts List with Filter Sidebar */
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-5">
+                {/* Desktop Left Sidebar */}
+                <div className="hidden lg:block lg:col-span-3">
+                  <ContactsFilterSidebar
+                    filters={contactFilters}
+                    onFilterChange={setContactFilters}
+                    onApplyFilters={() => {}}
+                    onResetFilters={() => setContactFilters(INITIAL_CONTACT_FILTERS)}
+                  />
+                </div>
+
+                {/* Mobile Filter Drawer */}
+                {mobileContactFilterOpen && (
+                  <div className="lg:hidden col-span-12">
+                    <ContactsFilterSidebar
+                      filters={contactFilters}
+                      onFilterChange={setContactFilters}
+                      onApplyFilters={() => setMobileContactFilterOpen(false)}
+                      onResetFilters={() => {
+                        setContactFilters(INITIAL_CONTACT_FILTERS)
+                        setMobileContactFilterOpen(false)
+                      }}
+                    />
+                  </div>
+                )}
+
+                {/* Main List */}
+                <div className="lg:col-span-9">
+                  <ContactsList
+                    contacts={filteredContacts}
+                    onSelectContact={(c) => setSelectedContact(c)}
+                    onToggleMobileFilter={() => setMobileContactFilterOpen(!mobileContactFilterOpen)}
+                  />
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
         {/* VIEW: BUILDINGS */}
         {activeNav === 'Buildings' && (
           <div>
@@ -359,19 +443,20 @@ export const Home: React.FC = () => {
           activeNav !== 'Developments' &&
           activeNav !== 'Buildings' &&
           activeNav !== 'Attorney Firms' &&
+          activeNav !== 'Contacts' &&
           activeNav !== 'Reports' &&
           activeNav !== 'Units' && (
             <div className="bg-white rounded-2xl p-8 border border-slate-100 text-center space-y-3">
               <h3 className="text-lg font-bold text-slate-800">{activeNav}</h3>
               <p className="text-xs text-slate-500 max-w-md mx-auto">
-                Module connected to Realtor360 enterprise backend. You can access Buildings, Attorney Firms, Developments, Reports, or return to Home.
+                Module connected to Realtor360 enterprise backend. You can access Contacts, Buildings, Attorney Firms, Developments, Reports, or return to Home.
               </p>
               <div className="flex justify-center gap-2 pt-2">
                 <button
-                  onClick={() => setActiveNav('Buildings')}
+                  onClick={() => setActiveNav('Contacts')}
                   className="px-4 py-2 rounded-lg bg-[#C99B30] text-white text-xs font-semibold hover:bg-[#b58928] cursor-pointer transition-colors"
                 >
-                  Explore Buildings
+                  Explore Contacts
                 </button>
                 <button
                   onClick={() => setActiveNav('Developments')}
