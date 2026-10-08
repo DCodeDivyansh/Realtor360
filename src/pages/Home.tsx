@@ -64,6 +64,12 @@ import { DealSheetView } from '../components/deals/DealSheetView'
 import { DEALS_DATA } from '../data/dealsData'
 import type { DealFilterState, DealItem } from '../types/deal'
 
+// Activities components
+import { ActivitiesFilterSidebar } from '../components/activities/ActivitiesFilterSidebar'
+import { ActivitiesList } from '../components/activities/ActivitiesList'
+import { ACTIVITIES_DATA } from '../data/activitiesData'
+import type { ActivityFilterState } from '../types/activity'
+
 const INITIAL_DEV_FILTERS: DevelopmentFilterState = {
   searchQuery: '',
   cities: [],
@@ -126,6 +132,15 @@ const INITIAL_DEAL_FILTERS: DealFilterState = {
   maxValue: 5,
 }
 
+const INITIAL_ACTIVITY_FILTERS: ActivityFilterState = {
+  types: [],
+  statuses: [],
+  linkedWith: [],
+  priorities: [],
+  owners: [],
+  searchQuery: '',
+}
+
 export const Home: React.FC = () => {
   const [activeNav, setActiveNav] = useState('Home')
 
@@ -164,6 +179,10 @@ export const Home: React.FC = () => {
   const [dealSubView, setDealSubView] = useState<'details' | 'offer-form' | 'deal-sheet'>('details')
   const [dealFilters, setDealFilters] = useState<DealFilterState>(INITIAL_DEAL_FILTERS)
   const [mobileDealFilterOpen, setMobileDealFilterOpen] = useState(false)
+
+  // Activities state
+  const [activityFilters, setActivityFilters] = useState<ActivityFilterState>(INITIAL_ACTIVITY_FILTERS)
+  const [mobileActivityFilterOpen, setMobileActivityFilterOpen] = useState(false)
 
   // Handle switching navigation tabs
   const handleNavSelect = (item: string) => {
@@ -275,6 +294,16 @@ export const Home: React.FC = () => {
     if (dealFilters.statuses.length > 0 && !dealFilters.statuses.includes(deal.status)) return false
     if (dealFilters.developments.length > 0 && !dealFilters.developments.includes(deal.development)) return false
     if (dealFilters.searchQuery && !deal.name.toLowerCase().includes(dealFilters.searchQuery.toLowerCase())) return false
+    return true
+  })
+
+  // Filter activities
+  const filteredActivities = ACTIVITIES_DATA.filter((act) => {
+    if (activityFilters.types.length > 0 && !activityFilters.types.includes(act.type)) return false
+    if (activityFilters.statuses.length > 0 && !activityFilters.statuses.includes(act.status)) return false
+    if (activityFilters.linkedWith.length > 0 && !activityFilters.linkedWith.includes(act.linkedType)) return false
+    if (activityFilters.priorities.length > 0 && !activityFilters.priorities.includes(act.priority)) return false
+    if (activityFilters.owners.length > 0 && !activityFilters.owners.includes(act.assignedTo)) return false
     return true
   })
 
@@ -504,6 +533,44 @@ export const Home: React.FC = () => {
           </div>
         )}
 
+        {/* VIEW: ACTIVITIES */}
+        {activeNav === 'Activities' && (
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-5">
+            {/* Desktop Left Sidebar */}
+            <div className="hidden lg:block lg:col-span-3">
+              <ActivitiesFilterSidebar
+                filters={activityFilters}
+                onFilterChange={setActivityFilters}
+                onApplyFilters={() => {}}
+                onResetFilters={() => setActivityFilters(INITIAL_ACTIVITY_FILTERS)}
+              />
+            </div>
+
+            {/* Mobile Filter Drawer */}
+            {mobileActivityFilterOpen && (
+              <div className="lg:hidden col-span-12">
+                <ActivitiesFilterSidebar
+                  filters={activityFilters}
+                  onFilterChange={setActivityFilters}
+                  onApplyFilters={() => setMobileActivityFilterOpen(false)}
+                  onResetFilters={() => {
+                    setActivityFilters(INITIAL_ACTIVITY_FILTERS)
+                    setMobileActivityFilterOpen(false)
+                  }}
+                />
+              </div>
+            )}
+
+            {/* Main List */}
+            <div className="lg:col-span-9">
+              <ActivitiesList
+                activities={filteredActivities}
+                onToggleMobileFilter={() => setMobileActivityFilterOpen(!mobileActivityFilterOpen)}
+              />
+            </div>
+          </div>
+        )}
+
         {/* VIEW: BUILDINGS */}
         {activeNav === 'Buildings' && (
           <div>
@@ -717,6 +784,7 @@ export const Home: React.FC = () => {
           activeNav !== 'Leads' &&
           activeNav !== 'Companies' &&
           activeNav !== 'Deals' &&
+          activeNav !== 'Activities' &&
           activeNav !== 'Reports' &&
           activeNav !== 'Units' && (
             <div className="bg-white rounded-2xl p-8 border border-slate-100 text-center space-y-3">
