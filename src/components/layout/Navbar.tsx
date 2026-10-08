@@ -15,15 +15,37 @@ const NAV_ITEMS = [
   'Reports',
 ]
 
-export const Navbar: React.FC = () => {
-  const [activeItem, setActiveItem] = useState('Home')
+interface NavbarProps {
+  activeItem?: string
+  onSelectItem?: (item: string) => void
+}
+
+export const Navbar: React.FC<NavbarProps> = ({
+  activeItem: controlledActiveItem,
+  onSelectItem,
+}) => {
+  const [internalActive, setInternalActive] = useState('Home')
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+
+  const activeItem = controlledActiveItem ?? internalActive
+
+  const handleSelect = (item: string) => {
+    if (onSelectItem) {
+      onSelectItem(item)
+    } else {
+      setInternalActive(item)
+    }
+    setMobileMenuOpen(false)
+  }
 
   return (
     <header className="bg-white border-b border-slate-100 sticky top-0 z-40">
       <div className="max-w-[1720px] mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
         {/* Left: Brand Logo */}
-        <div className="flex items-center gap-2.5 shrink-0 cursor-pointer">
+        <div
+          onClick={() => handleSelect('Home')}
+          className="flex items-center gap-2.5 shrink-0 cursor-pointer select-none"
+        >
           <div className="w-7 h-7 flex items-center justify-center">
             {/* Custom Realtor 360 Emblem */}
             <svg viewBox="0 0 32 32" fill="none" className="w-7 h-7">
@@ -65,8 +87,8 @@ export const Navbar: React.FC = () => {
             return (
               <button
                 key={item}
-                onClick={() => setActiveItem(item)}
-                className={`px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all duration-150 whitespace-nowrap ${
+                onClick={() => handleSelect(item)}
+                className={`px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all duration-150 whitespace-nowrap cursor-pointer ${
                   isActive
                     ? 'bg-[#C99B30] text-white shadow-xs'
                     : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
@@ -107,7 +129,7 @@ export const Navbar: React.FC = () => {
           {/* Mobile hamburger */}
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="xl:hidden p-1.5 rounded-lg text-slate-600 hover:bg-slate-100"
+            className="xl:hidden p-1.5 rounded-lg text-slate-600 hover:bg-slate-100 cursor-pointer"
           >
             {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
           </button>
@@ -129,11 +151,8 @@ export const Navbar: React.FC = () => {
             {NAV_ITEMS.map((item) => (
               <button
                 key={item}
-                onClick={() => {
-                  setActiveItem(item)
-                  setMobileMenuOpen(false)
-                }}
-                className={`px-3 py-1.5 rounded-full text-xs font-semibold text-left transition-colors ${
+                onClick={() => handleSelect(item)}
+                className={`px-3 py-1.5 rounded-full text-xs font-semibold text-left transition-colors cursor-pointer ${
                   activeItem === item
                     ? 'bg-[#C99B30] text-white'
                     : 'text-slate-600 hover:bg-slate-100'
