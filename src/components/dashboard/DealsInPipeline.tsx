@@ -4,33 +4,33 @@ import { PIPELINE_DATA } from '../../data/dashboardData'
 
 export const DealsInPipeline: React.FC = () => {
   return (
-    <Card className="p-4 sm:p-5 flex flex-col justify-between h-full">
-      <h3 className="text-sm sm:text-base font-bold text-slate-800 mb-3">
-        Deals in Pipeline by Development
-      </h3>
+    <Card className="p-4 sm:p-5 h-full flex flex-col justify-between">
+      <div>
+        <h3 className="text-sm sm:text-base font-bold text-slate-800 mb-4">
+          Deals in Pipeline by Development
+        </h3>
 
-      <div className="w-full flex-1 flex flex-col justify-between">
         {/* Table Header */}
-        <div className="flex items-center justify-between py-2 px-3 bg-[#F8FAFC] rounded-lg text-xs font-semibold text-slate-700 mb-2">
+        <div className="flex items-center justify-between py-2 px-3 bg-[#F8FAFC] rounded-lg text-xs font-semibold text-slate-700 mb-3">
           <span>Development Name</span>
           <span>Record Count</span>
         </div>
 
         {/* Table Rows */}
-        <div className="divide-y divide-slate-100/80">
+        <div className="space-y-4 px-1 pt-1">
           {PIPELINE_DATA.map((item) => (
             <div
               key={item.name}
-              className="flex items-center justify-between py-3 px-3 text-xs sm:text-sm text-slate-700 hover:bg-slate-50/60 transition-colors"
+              className="flex items-center justify-between py-2 px-2 text-xs sm:text-sm text-slate-700 hover:bg-slate-50/80 rounded-md transition-colors"
             >
-              <span>{item.name}</span>
-              <span className="font-medium text-slate-800">{item.count}</span>
+              <span className="font-normal text-slate-700">{item.name}</span>
+              <span className="font-semibold text-slate-800">{item.count}</span>
             </div>
           ))}
         </div>
-
-        <div className="h-2" />
       </div>
+
+      <div className="h-4" />
     </Card>
   )
 }

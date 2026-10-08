@@ -2,10 +2,9 @@ import React from 'react'
 import { Card } from '../ui/Card'
 
 export const DealsByLeadSource: React.FC = () => {
-  // SVG Donut calculation helpers
   const cx = 200
   const cy = 150
-  const rOuter = 82
+  const rOuter = 78
   const rInner = 44
 
   const polarToCartesian = (centerX: number, centerY: number, radius: number, angleInDegrees: number) => {
@@ -40,38 +39,29 @@ export const DealsByLeadSource: React.FC = () => {
     ].join(' ')
   }
 
-  // Slices definitions:
-  // 1. Inbound Call: 37.87% (136.3 deg), from 10deg to 146.3deg -> pale cream (#F4EED2)
-  // 2. Reference: 30.6% (110.1 deg), from 146.3deg to 256.4deg -> deep gold (#C99B30)
-  // 3. Facebook: 6.78% (24.4 deg), from 256.4deg to 280.8deg -> medium gold (#D7B158)
-  // 4. Website: 24.83% (89.4 deg), from 280.8deg to 370.2deg (10.2deg) -> light warm gold (#E3C985)
+  // 1. Inbound Call: 37.87% (~136.3 deg), from 0deg to 136deg -> pale cream (#F4EED2)
+  // 2. Reference: 30.6% (~110.1 deg), from 136deg to 246deg -> deep gold (#C99B30)
+  // 3. Facebook: 6.78% (~24.4 deg), from 246deg to 270deg -> medium gold (#D7B158)
+  // 4. Website: 24.83% (~89.4 deg), from 270deg to 360deg -> light gold (#E3C985)
   const slices = [
     {
       name: 'Inbound Call',
-      count: 9,
-      percentage: '37.87%',
-      path: describeArc(cx, cy, rOuter, rInner, 10, 146),
+      path: describeArc(cx, cy, rOuter, rInner, 2, 134),
       color: '#F4EED2',
     },
     {
       name: 'Reference',
-      count: 1,
-      percentage: '30.6%',
-      path: describeArc(cx, cy, rOuter, rInner, 146, 256),
+      path: describeArc(cx, cy, rOuter, rInner, 136, 244),
       color: '#C99B30',
     },
     {
       name: 'Facebook',
-      count: 1,
-      percentage: '6.78%',
-      path: describeArc(cx, cy, rOuter, rInner, 256, 281),
+      path: describeArc(cx, cy, rOuter, rInner, 246, 269),
       color: '#D7B158',
     },
     {
       name: 'Website',
-      count: 10,
-      percentage: '24.83%',
-      path: describeArc(cx, cy, rOuter, rInner, 281, 370),
+      path: describeArc(cx, cy, rOuter, rInner, 271, 358),
       color: '#E3C985',
     },
   ]
@@ -90,7 +80,7 @@ export const DealsByLeadSource: React.FC = () => {
           <defs>
             {/* Arrow Marker */}
             <marker
-              id="arrow"
+              id="arrow-lead"
               viewBox="0 0 10 10"
               refX="6"
               refY="5"
@@ -98,7 +88,14 @@ export const DealsByLeadSource: React.FC = () => {
               markerHeight="6"
               orient="auto-start-reverse"
             >
-              <path d="M 0 1.5 L 6 5 L 0 8.5" fill="none" stroke="#475569" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+              <path
+                d="M 1 2 L 7 5 L 1 8"
+                fill="none"
+                stroke="#64748B"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
             </marker>
           </defs>
 
@@ -109,82 +106,80 @@ export const DealsByLeadSource: React.FC = () => {
                 key={i}
                 d={slice.path}
                 fill={slice.color}
-                stroke="#FFFFFF"
-                strokeWidth="1.5"
                 className="transition-opacity hover:opacity-90"
               />
             ))}
           </g>
 
-          {/* Callout 1: Inbound Call (Top Right) */}
-          <g className="text-xs">
-            <text x="325" y="70" textAnchor="middle" className="text-[11px] font-medium fill-slate-500">
-              Inbound Call
+          {/* Callout 1: Website (Top Left) */}
+          <g>
+            <text x="80" y="76" textAnchor="middle" className="text-[11px] font-medium fill-slate-700">
+              Website
             </text>
-            <text x="325" y="86" textAnchor="middle" className="text-[11px] font-medium fill-slate-500">
-              9 (37.87%)
+            <text x="80" y="92" textAnchor="middle" className="text-[10px] fill-slate-500">
+              10 (24.83%)
             </text>
-            {/* Curved pointer arrow */}
+            {/* Curved pointer arrow to slice */}
             <path
-              d="M 310 75 C 275 72 260 90 252 110"
+              d="M 100 86 Q 130 80 148 108"
               fill="none"
               stroke="#64748B"
-              strokeWidth="1.2"
-              markerEnd="url(#arrow)"
+              strokeWidth="1.3"
+              markerEnd="url(#arrow-lead)"
             />
           </g>
 
-          {/* Callout 2: Website (Top Left) */}
-          <g className="text-xs">
-            <text x="80" y="80" textAnchor="middle" className="text-[11px] font-medium fill-slate-500">
-              Website
+          {/* Callout 2: Inbound Call (Top Right) */}
+          <g>
+            <text x="320" y="76" textAnchor="middle" className="text-[11px] font-medium fill-slate-700">
+              Inbound Call
             </text>
-            <text x="80" y="96" textAnchor="middle" className="text-[11px] font-medium fill-slate-500">
-              10 (24.83%)
+            <text x="320" y="92" textAnchor="middle" className="text-[10px] fill-slate-500">
+              9 (37.87%)
             </text>
-            {/* Curved pointer arrow */}
+            {/* Curved pointer arrow to slice */}
             <path
-              d="M 95 85 C 125 80 135 100 148 116"
+              d="M 298 86 Q 268 80 252 108"
               fill="none"
               stroke="#64748B"
-              strokeWidth="1.2"
-              markerEnd="url(#arrow)"
+              strokeWidth="1.3"
+              markerEnd="url(#arrow-lead)"
             />
           </g>
 
           {/* Callout 3: Facebook (Bottom Left) */}
-          <g className="text-xs">
-            <text x="75" y="224" textAnchor="middle" className="text-[11px] font-medium fill-slate-500">
+          <g>
+            <text x="75" y="222" textAnchor="middle" className="text-[11px] font-medium fill-slate-700">
               Facebook
             </text>
-            <text x="75" y="240" textAnchor="middle" className="text-[11px] font-medium fill-slate-500">
+            <text x="75" y="238" textAnchor="middle" className="text-[10px] fill-slate-500">
               1 (6.78%)
             </text>
-            {/* Curved pointer arrow */}
+            {/* Curved pointer arrow to slice */}
             <path
-              d="M 90 230 C 120 235 130 220 145 200"
+              d="M 95 230 Q 120 234 140 196"
               fill="none"
               stroke="#64748B"
-              strokeWidth="1.2"
-              markerEnd="url(#arrow)"
+              strokeWidth="1.3"
+              markerEnd="url(#arrow-lead)"
             />
           </g>
 
           {/* Callout 4: Reference (Bottom Right) */}
-          <g className="text-xs">
-            <text x="325" y="224" textAnchor="middle" className="text-[11px] font-medium fill-slate-500">
+          <g>
+            <text x="325" y="222" textAnchor="middle" className="text-[11px] font-medium fill-slate-700">
               Reference
             </text>
-            <text x="325" y="240" textAnchor="middle" className="text-[11px] font-medium fill-slate-500">
+            <text x="325" y="238" textAnchor="middle" className="text-[10px] fill-slate-500">
               1 (30.6%)
             </text>
-            {/* Curved pointer arrow */}
+            {/* Curved pointer arrow to slice */}
             <path
-              d="M 310 230 C 285 235 270 215 252 195"
+              d="M 305 230 Q 280 234 256 198"
               fill="none"
               stroke="#64748B"
-              strokeWidth="1.2"
-              markerEnd="url(#arrow)"
+              strokeWidth="1.3"
+              markerEnd="url(#arrow-lead)"
             />
           </g>
         </svg>
