@@ -55,6 +55,15 @@ import { CompanyDetails } from '../components/companies/CompanyDetails'
 import { COMPANIES_DATA } from '../data/companiesData'
 import type { CompanyFilterState, CompanyItem } from '../types/company'
 
+// Deals components
+import { DealsFilterSidebar } from '../components/deals/DealsFilterSidebar'
+import { DealsList } from '../components/deals/DealsList'
+import { DealDetails } from '../components/deals/DealDetails'
+import { OfferFormView } from '../components/deals/OfferFormView'
+import { DealSheetView } from '../components/deals/DealSheetView'
+import { DEALS_DATA } from '../data/dealsData'
+import type { DealFilterState, DealItem } from '../types/deal'
+
 const INITIAL_DEV_FILTERS: DevelopmentFilterState = {
   searchQuery: '',
   cities: [],
@@ -107,6 +116,16 @@ const INITIAL_COMPANY_FILTERS: CompanyFilterState = {
   projectRanges: [],
 }
 
+const INITIAL_DEAL_FILTERS: DealFilterState = {
+  searchQuery: '',
+  owners: [],
+  statuses: [],
+  developments: [],
+  leadSources: [],
+  minValue: 0,
+  maxValue: 5,
+}
+
 export const Home: React.FC = () => {
   const [activeNav, setActiveNav] = useState('Home')
 
@@ -140,6 +159,12 @@ export const Home: React.FC = () => {
   const [companyFilters, setCompanyFilters] = useState<CompanyFilterState>(INITIAL_COMPANY_FILTERS)
   const [mobileCompanyFilterOpen, setMobileCompanyFilterOpen] = useState(false)
 
+  // Deals state
+  const [selectedDeal, setSelectedDeal] = useState<DealItem | null>(null)
+  const [dealSubView, setDealSubView] = useState<'details' | 'offer-form' | 'deal-sheet'>('details')
+  const [dealFilters, setDealFilters] = useState<DealFilterState>(INITIAL_DEAL_FILTERS)
+  const [mobileDealFilterOpen, setMobileDealFilterOpen] = useState(false)
+
   // Handle switching navigation tabs
   const handleNavSelect = (item: string) => {
     setActiveNav(item)
@@ -149,6 +174,10 @@ export const Home: React.FC = () => {
     if (item === 'Contacts' && !selectedContact) setSelectedContact(null)
     if (item === 'Leads' && !selectedLead) setSelectedLead(null)
     if (item === 'Companies' && !selectedCompany) setSelectedCompany(null)
+    if (item === 'Deals' && !selectedDeal) {
+      setSelectedDeal(null)
+      setDealSubView('details')
+    }
   }
 
   // Filter developments
@@ -237,6 +266,15 @@ export const Home: React.FC = () => {
       if (!match) return false
     }
     if (companyFilters.searchQuery && !comp.name.toLowerCase().includes(companyFilters.searchQuery.toLowerCase())) return false
+    return true
+  })
+
+  // Filter deals
+  const filteredDeals = DEALS_DATA.filter((deal) => {
+    if (dealFilters.owners.length > 0 && !dealFilters.owners.includes(deal.owner)) return false
+    if (dealFilters.statuses.length > 0 && !dealFilters.statuses.includes(deal.status)) return false
+    if (dealFilters.developments.length > 0 && !dealFilters.developments.includes(deal.development)) return false
+    if (dealFilters.searchQuery && !deal.name.toLowerCase().includes(dealFilters.searchQuery.toLowerCase())) return false
     return true
   })
 
@@ -390,6 +428,75 @@ export const Home: React.FC = () => {
                     contacts={filteredContacts}
                     onSelectContact={(c) => setSelectedContact(c)}
                     onToggleMobileFilter={() => setMobileContactFilterOpen(!mobileContactFilterOpen)}
+                  />
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* VIEW: DEALS */}
+        {activeNav === 'Deals' && (
+          <div>
+            {selectedDeal ? (
+              dealSubView === 'offer-form' ? (
+                /* Offer Form Document View */
+                <OfferFormView
+                  deal={selectedDeal}
+                  onBack={() => setDealSubView('details')}
+                />
+              ) : dealSubView === 'deal-sheet' ? (
+                /* Deal Sheet Document View */
+                <DealSheetView
+                  deal={selectedDeal}
+                  onBack={() => setDealSubView('details')}
+                />
+              ) : (
+                /* Deal Details View */
+                <DealDetails
+                  deal={selectedDeal}
+                  onBack={() => setSelectedDeal(null)}
+                  onOpenOfferForm={() => setDealSubView('offer-form')}
+                  onOpenDealSheet={() => setDealSubView('deal-sheet')}
+                />
+              )
+            ) : (
+              /* Deals List with Filter Sidebar */
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-5">
+                {/* Desktop Left Sidebar */}
+                <div className="hidden lg:block lg:col-span-3">
+                  <DealsFilterSidebar
+                    filters={dealFilters}
+                    onFilterChange={setDealFilters}
+                    onApplyFilters={() => {}}
+                    onResetFilters={() => setDealFilters(INITIAL_DEAL_FILTERS)}
+                  />
+                </div>
+
+                {/* Mobile Filter Drawer */}
+                {mobileDealFilterOpen && (
+                  <div className="lg:hidden col-span-12">
+                    <DealsFilterSidebar
+                      filters={dealFilters}
+                      onFilterChange={setDealFilters}
+                      onApplyFilters={() => setMobileDealFilterOpen(false)}
+                      onResetFilters={() => {
+                        setDealFilters(INITIAL_DEAL_FILTERS)
+                        setMobileDealFilterOpen(false)
+                      }}
+                    />
+                  </div>
+                )}
+
+                {/* Main List */}
+                <div className="lg:col-span-9">
+                  <DealsList
+                    deals={filteredDeals}
+                    onSelectDeal={(d) => {
+                      setSelectedDeal(d)
+                      setDealSubView('details')
+                    }}
+                    onToggleMobileFilter={() => setMobileDealFilterOpen(!mobileDealFilterOpen)}
                   />
                 </div>
               </div>
@@ -609,6 +716,7 @@ export const Home: React.FC = () => {
           activeNav !== 'Contacts' &&
           activeNav !== 'Leads' &&
           activeNav !== 'Companies' &&
+          activeNav !== 'Deals' &&
           activeNav !== 'Reports' &&
           activeNav !== 'Units' && (
             <div className="bg-white rounded-2xl p-8 border border-slate-100 text-center space-y-3">
