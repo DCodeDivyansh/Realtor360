@@ -77,6 +77,14 @@ import { UnitDetails } from '../components/units/UnitDetails'
 import { UNITS_DATA } from '../data/unitsData'
 import type { UnitFilterState, UnitItem } from '../types/unit'
 
+// Reports components
+import { ReportsFilterSidebar } from '../components/reports/ReportsFilterSidebar'
+import { ReportsList } from '../components/reports/ReportsList'
+import { ReportViewer } from '../components/reports/ReportViewer'
+import { CreateChartView } from '../components/reports/CreateChartView'
+import { REPORTS_DATA, LEADS_BY_SOURCE_ROWS } from '../data/reportsData'
+import type { ReportFilterState, ReportItem } from '../types/report'
+
 const INITIAL_DEV_FILTERS: DevelopmentFilterState = {
   searchQuery: '',
   cities: [],
@@ -159,6 +167,11 @@ const INITIAL_UNIT_FILTERS: UnitFilterState = {
   searchQuery: '',
 }
 
+const INITIAL_REPORT_FILTERS: ReportFilterState = {
+  categories: [],
+  searchQuery: '',
+}
+
 export const Home: React.FC = () => {
   const [activeNav, setActiveNav] = useState('Home')
 
@@ -207,6 +220,12 @@ export const Home: React.FC = () => {
   const [unitFilters, setUnitFilters] = useState<UnitFilterState>(INITIAL_UNIT_FILTERS)
   const [mobileUnitFilterOpen, setMobileUnitFilterOpen] = useState(false)
 
+  // Reports state
+  const [selectedReport, setSelectedReport] = useState<ReportItem | null>(null)
+  const [reportSubView, setReportSubView] = useState<'viewer' | 'create-chart' | 'stacking-plan'>('viewer')
+  const [reportFilters, setReportFilters] = useState<ReportFilterState>(INITIAL_REPORT_FILTERS)
+  const [mobileReportFilterOpen, setMobileReportFilterOpen] = useState(false)
+
   // Handle switching navigation tabs
   const handleNavSelect = (item: string) => {
     setActiveNav(item)
@@ -220,6 +239,10 @@ export const Home: React.FC = () => {
     if (item === 'Deals' && !selectedDeal) {
       setSelectedDeal(null)
       setDealSubView('details')
+    }
+    if (item === 'Reports' && !selectedReport) {
+      setSelectedReport(null)
+      setReportSubView('viewer')
     }
   }
 
@@ -339,6 +362,13 @@ export const Home: React.FC = () => {
     if (unitFilters.unitTypes.length > 0 && !unitFilters.unitTypes.includes(unit.type)) return false
     if (unitFilters.facings.length > 0 && !unitFilters.facings.includes(unit.facing)) return false
     if (unitFilters.searchQuery && !unit.name.toLowerCase().includes(unitFilters.searchQuery.toLowerCase())) return false
+    return true
+  })
+
+  // Filter reports
+  const filteredReports = REPORTS_DATA.filter((rep) => {
+    if (reportFilters.categories.length > 0 && !reportFilters.categories.includes(rep.category)) return false
+    if (reportFilters.searchQuery && !rep.name.toLowerCase().includes(reportFilters.searchQuery.toLowerCase())) return false
     return true
   })
 
@@ -807,9 +837,75 @@ export const Home: React.FC = () => {
           </div>
         )}
 
-        {/* VIEW: REPORTS / STACKING PLAN REPORTS */}
+        {/* VIEW: REPORTS */}
         {activeNav === 'Reports' && (
-          <StackingPlanReports onBack={() => setActiveNav('Home')} />
+          <div>
+            {selectedReport ? (
+              reportSubView === 'stacking-plan' || selectedReport.name === 'Stacking Plan Reports' ? (
+                /* Stacking Plan Reports Matrix View */
+                <StackingPlanReports onBack={() => setSelectedReport(null)} />
+              ) : reportSubView === 'create-chart' ? (
+                /* Create Chart View */
+                <CreateChartView
+                  report={selectedReport}
+                  rows={LEADS_BY_SOURCE_ROWS}
+                  onBack={() => setReportSubView('viewer')}
+                />
+              ) : (
+                /* Report Viewer Table View */
+                <ReportViewer
+                  report={selectedReport}
+                  rows={LEADS_BY_SOURCE_ROWS}
+                  onBack={() => setSelectedReport(null)}
+                  onOpenCreateChart={() => setReportSubView('create-chart')}
+                />
+              )
+            ) : (
+              /* Reports List with Filter Sidebar */
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-5">
+                {/* Desktop Left Sidebar */}
+                <div className="hidden lg:block lg:col-span-3">
+                  <ReportsFilterSidebar
+                    filters={reportFilters}
+                    onFilterChange={setReportFilters}
+                    onApplyFilters={() => {}}
+                    onResetFilters={() => setReportFilters(INITIAL_REPORT_FILTERS)}
+                  />
+                </div>
+
+                {/* Mobile Filter Drawer */}
+                {mobileReportFilterOpen && (
+                  <div className="lg:hidden col-span-12">
+                    <ReportsFilterSidebar
+                      filters={reportFilters}
+                      onFilterChange={setReportFilters}
+                      onApplyFilters={() => setMobileReportFilterOpen(false)}
+                      onResetFilters={() => {
+                        setReportFilters(INITIAL_REPORT_FILTERS)
+                        setMobileReportFilterOpen(false)
+                      }}
+                    />
+                  </div>
+                )}
+
+                {/* Main List */}
+                <div className="lg:col-span-9">
+                  <ReportsList
+                    reports={filteredReports}
+                    onSelectReport={(r) => {
+                      setSelectedReport(r)
+                      if (r.name === 'Stacking Plan Reports') {
+                        setReportSubView('stacking-plan')
+                      } else {
+                        setReportSubView('viewer')
+                      }
+                    }}
+                    onToggleMobileFilter={() => setMobileReportFilterOpen(!mobileReportFilterOpen)}
+                  />
+                </div>
+              </div>
+            )}
+          </div>
         )}
 
         {/* SCREEN 1: EXECUTIVE DASHBOARD (DEFAULT / HOME) */}
