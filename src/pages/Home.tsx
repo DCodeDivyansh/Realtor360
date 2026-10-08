@@ -41,6 +41,13 @@ import { ContactDetails } from '../components/contacts/ContactDetails'
 import { CONTACTS_DATA } from '../data/contactsData'
 import type { ContactFilterState, ContactItem } from '../types/contact'
 
+// Leads components
+import { LeadsFilterSidebar } from '../components/leads/LeadsFilterSidebar'
+import { LeadsList } from '../components/leads/LeadsList'
+import { LeadDetails } from '../components/leads/LeadDetails'
+import { LEADS_DATA } from '../data/leadsData'
+import type { LeadFilterState, LeadItem } from '../types/lead'
+
 const INITIAL_DEV_FILTERS: DevelopmentFilterState = {
   searchQuery: '',
   cities: [],
@@ -77,6 +84,14 @@ const INITIAL_CONTACT_FILTERS: ContactFilterState = {
   leadSources: [],
 }
 
+const INITIAL_LEAD_FILTERS: LeadFilterState = {
+  searchQuery: '',
+  sources: [],
+  statuses: [],
+  categories: [],
+  owners: [],
+}
+
 export const Home: React.FC = () => {
   const [activeNav, setActiveNav] = useState('Home')
 
@@ -100,21 +115,19 @@ export const Home: React.FC = () => {
   const [contactFilters, setContactFilters] = useState<ContactFilterState>(INITIAL_CONTACT_FILTERS)
   const [mobileContactFilterOpen, setMobileContactFilterOpen] = useState(false)
 
+  // Leads state
+  const [selectedLead, setSelectedLead] = useState<LeadItem | null>(null)
+  const [leadFilters, setLeadFilters] = useState<LeadFilterState>(INITIAL_LEAD_FILTERS)
+  const [mobileLeadFilterOpen, setMobileLeadFilterOpen] = useState(false)
+
   // Handle switching navigation tabs
   const handleNavSelect = (item: string) => {
     setActiveNav(item)
-    if (item === 'Developments' && !selectedDevelopment) {
-      setSelectedDevelopment(null)
-    }
-    if (item === 'Attorney Firms' && !selectedAttorney) {
-      setSelectedAttorney(null)
-    }
-    if (item === 'Buildings' && !selectedBuilding) {
-      setSelectedBuilding(null)
-    }
-    if (item === 'Contacts' && !selectedContact) {
-      setSelectedContact(null)
-    }
+    if (item === 'Developments' && !selectedDevelopment) setSelectedDevelopment(null)
+    if (item === 'Attorney Firms' && !selectedAttorney) setSelectedAttorney(null)
+    if (item === 'Buildings' && !selectedBuilding) setSelectedBuilding(null)
+    if (item === 'Contacts' && !selectedContact) setSelectedContact(null)
+    if (item === 'Leads' && !selectedLead) setSelectedLead(null)
   }
 
   // Filter developments
@@ -177,6 +190,16 @@ export const Home: React.FC = () => {
     return true
   })
 
+  // Filter leads
+  const filteredLeads = LEADS_DATA.filter((l) => {
+    if (leadFilters.sources.length > 0 && !leadFilters.sources.includes(l.source)) return false
+    if (leadFilters.statuses.length > 0 && !leadFilters.statuses.includes(l.status)) return false
+    if (leadFilters.categories.length > 0 && !leadFilters.categories.includes(l.category)) return false
+    if (leadFilters.owners.length > 0 && !leadFilters.owners.includes(l.owner)) return false
+    if (leadFilters.searchQuery && !l.name.toLowerCase().includes(leadFilters.searchQuery.toLowerCase())) return false
+    return true
+  })
+
   return (
     <div className="min-h-screen bg-[#F4F5F8] flex flex-col font-sans text-slate-800">
       {/* Top Navbar */}
@@ -184,11 +207,61 @@ export const Home: React.FC = () => {
 
       {/* Main Content Area */}
       <main className="flex-1 max-w-[1720px] w-full mx-auto p-3 sm:p-4 md:p-5 lg:p-6">
+        {/* VIEW: LEADS */}
+        {activeNav === 'Leads' && (
+          <div>
+            {selectedLead ? (
+              /* Lead Details View */
+              <LeadDetails
+                lead={selectedLead}
+                onBack={() => setSelectedLead(null)}
+              />
+            ) : (
+              /* Leads List with Filter Sidebar */
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-5">
+                {/* Desktop Left Sidebar */}
+                <div className="hidden lg:block lg:col-span-3">
+                  <LeadsFilterSidebar
+                    filters={leadFilters}
+                    onFilterChange={setLeadFilters}
+                    onApplyFilters={() => {}}
+                    onResetFilters={() => setLeadFilters(INITIAL_LEAD_FILTERS)}
+                  />
+                </div>
+
+                {/* Mobile Filter Drawer */}
+                {mobileLeadFilterOpen && (
+                  <div className="lg:hidden col-span-12">
+                    <LeadsFilterSidebar
+                      filters={leadFilters}
+                      onFilterChange={setLeadFilters}
+                      onApplyFilters={() => setMobileLeadFilterOpen(false)}
+                      onResetFilters={() => {
+                        setLeadFilters(INITIAL_LEAD_FILTERS)
+                        setMobileLeadFilterOpen(false)
+                      }}
+                    />
+                  </div>
+                )}
+
+                {/* Main List */}
+                <div className="lg:col-span-9">
+                  <LeadsList
+                    leads={filteredLeads}
+                    onSelectLead={(l) => setSelectedLead(l)}
+                    onToggleMobileFilter={() => setMobileLeadFilterOpen(!mobileLeadFilterOpen)}
+                  />
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
         {/* VIEW: CONTACTS */}
         {activeNav === 'Contacts' && (
           <div>
             {selectedContact ? (
-              /* Contact Details View (John Doe) */
+              /* Contact Details View */
               <ContactDetails
                 contact={selectedContact}
                 onBack={() => setSelectedContact(null)}
@@ -238,7 +311,7 @@ export const Home: React.FC = () => {
         {activeNav === 'Buildings' && (
           <div>
             {selectedBuilding ? (
-              /* Building Details View (Aster Tower / Orchid Heights) */
+              /* Building Details View */
               <BuildingDetails
                 building={selectedBuilding}
                 onBack={() => setSelectedBuilding(null)}
@@ -444,25 +517,26 @@ export const Home: React.FC = () => {
           activeNav !== 'Buildings' &&
           activeNav !== 'Attorney Firms' &&
           activeNav !== 'Contacts' &&
+          activeNav !== 'Leads' &&
           activeNav !== 'Reports' &&
           activeNav !== 'Units' && (
             <div className="bg-white rounded-2xl p-8 border border-slate-100 text-center space-y-3">
               <h3 className="text-lg font-bold text-slate-800">{activeNav}</h3>
               <p className="text-xs text-slate-500 max-w-md mx-auto">
-                Module connected to Realtor360 enterprise backend. You can access Contacts, Buildings, Attorney Firms, Developments, Reports, or return to Home.
+                Module connected to Realtor360 enterprise backend. You can access Leads, Contacts, Buildings, Attorney Firms, Developments, Reports, or return to Home.
               </p>
               <div className="flex justify-center gap-2 pt-2">
                 <button
-                  onClick={() => setActiveNav('Contacts')}
+                  onClick={() => setActiveNav('Leads')}
                   className="px-4 py-2 rounded-lg bg-[#C99B30] text-white text-xs font-semibold hover:bg-[#b58928] cursor-pointer transition-colors"
                 >
-                  Explore Contacts
+                  Explore Leads
                 </button>
                 <button
-                  onClick={() => setActiveNav('Developments')}
+                  onClick={() => setActiveNav('Contacts')}
                   className="px-4 py-2 rounded-lg border border-slate-200 text-slate-700 text-xs font-semibold hover:bg-slate-50 cursor-pointer transition-colors"
                 >
-                  Explore Developments
+                  Explore Contacts
                 </button>
               </div>
             </div>
