@@ -27,6 +27,13 @@ import { AttorneyDetails } from '../components/attorney/AttorneyDetails'
 import { ATTORNEY_FIRMS_DATA } from '../data/attorneyData'
 import type { AttorneyFilterState, AttorneyFirmItem } from '../types/attorney'
 
+// Buildings components
+import { BuildingsFilterSidebar } from '../components/buildings/BuildingsFilterSidebar'
+import { BuildingsList } from '../components/buildings/BuildingsList'
+import { BuildingDetails } from '../components/buildings/BuildingDetails'
+import { BUILDINGS_DATA } from '../data/buildingsData'
+import type { BuildingFilterState, BuildingItem } from '../types/building'
+
 const INITIAL_DEV_FILTERS: DevelopmentFilterState = {
   searchQuery: '',
   cities: [],
@@ -46,6 +53,14 @@ const INITIAL_ATTORNEY_FILTERS: AttorneyFilterState = {
   clientsHandled: [],
 }
 
+const INITIAL_BUILDING_FILTERS: BuildingFilterState = {
+  searchQuery: '',
+  developments: [],
+  statuses: [],
+  cities: [],
+  unitRanges: [],
+}
+
 export const Home: React.FC = () => {
   const [activeNav, setActiveNav] = useState('Home')
 
@@ -59,6 +74,11 @@ export const Home: React.FC = () => {
   const [attorneyFilters, setAttorneyFilters] = useState<AttorneyFilterState>(INITIAL_ATTORNEY_FILTERS)
   const [mobileAttorneyFilterOpen, setMobileAttorneyFilterOpen] = useState(false)
 
+  // Buildings state
+  const [selectedBuilding, setSelectedBuilding] = useState<BuildingItem | null>(null)
+  const [buildingFilters, setBuildingFilters] = useState<BuildingFilterState>(INITIAL_BUILDING_FILTERS)
+  const [mobileBuildingFilterOpen, setMobileBuildingFilterOpen] = useState(false)
+
   // Handle switching navigation tabs
   const handleNavSelect = (item: string) => {
     setActiveNav(item)
@@ -67,6 +87,9 @@ export const Home: React.FC = () => {
     }
     if (item === 'Attorney Firms' && !selectedAttorney) {
       setSelectedAttorney(null)
+    }
+    if (item === 'Buildings' && !selectedBuilding) {
+      setSelectedBuilding(null)
     }
   }
 
@@ -102,6 +125,24 @@ export const Home: React.FC = () => {
     return true
   })
 
+  // Filter buildings
+  const filteredBuildings = BUILDINGS_DATA.filter((bld) => {
+    if (buildingFilters.developments.length > 0 && !buildingFilters.developments.includes(bld.developmentName)) return false
+    if (buildingFilters.statuses.length > 0 && !buildingFilters.statuses.includes(bld.status)) return false
+    if (buildingFilters.cities.length > 0 && !buildingFilters.cities.includes(bld.city)) return false
+    if (buildingFilters.unitRanges.length > 0) {
+      const match = buildingFilters.unitRanges.some((r) => {
+        if (r === '0-10') return bld.units <= 10
+        if (r === '11-20') return bld.units >= 11 && bld.units <= 20
+        if (r === '21-30') return bld.units >= 21 && bld.units <= 30
+        if (r === '31+') return bld.units >= 31
+        return true
+      })
+      if (!match) return false
+    }
+    return true
+  })
+
   return (
     <div className="min-h-screen bg-[#F4F5F8] flex flex-col font-sans text-slate-800">
       {/* Top Navbar */}
@@ -109,6 +150,57 @@ export const Home: React.FC = () => {
 
       {/* Main Content Area */}
       <main className="flex-1 max-w-[1720px] w-full mx-auto p-3 sm:p-4 md:p-5 lg:p-6">
+        {/* VIEW: BUILDINGS */}
+        {activeNav === 'Buildings' && (
+          <div>
+            {selectedBuilding ? (
+              /* Building Details View (Aster Tower / Orchid Heights) */
+              <BuildingDetails
+                building={selectedBuilding}
+                onBack={() => setSelectedBuilding(null)}
+                onSwitchBuilding={(b) => setSelectedBuilding(b)}
+              />
+            ) : (
+              /* Buildings List with Filter Sidebar */
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-5">
+                {/* Desktop Left Sidebar */}
+                <div className="hidden lg:block lg:col-span-3">
+                  <BuildingsFilterSidebar
+                    filters={buildingFilters}
+                    onFilterChange={setBuildingFilters}
+                    onApplyFilters={() => {}}
+                    onResetFilters={() => setBuildingFilters(INITIAL_BUILDING_FILTERS)}
+                  />
+                </div>
+
+                {/* Mobile Filter Drawer */}
+                {mobileBuildingFilterOpen && (
+                  <div className="lg:hidden col-span-12">
+                    <BuildingsFilterSidebar
+                      filters={buildingFilters}
+                      onFilterChange={setBuildingFilters}
+                      onApplyFilters={() => setMobileBuildingFilterOpen(false)}
+                      onResetFilters={() => {
+                        setBuildingFilters(INITIAL_BUILDING_FILTERS)
+                        setMobileBuildingFilterOpen(false)
+                      }}
+                    />
+                  </div>
+                )}
+
+                {/* Main List */}
+                <div className="lg:col-span-9">
+                  <BuildingsList
+                    buildings={filteredBuildings}
+                    onSelectBuilding={(b) => setSelectedBuilding(b)}
+                    onToggleMobileFilter={() => setMobileBuildingFilterOpen(!mobileBuildingFilterOpen)}
+                  />
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
         {/* VIEW: ATTORNEY FIRMS */}
         {activeNav === 'Attorney Firms' && (
           <div>
@@ -210,7 +302,7 @@ export const Home: React.FC = () => {
         )}
 
         {/* VIEW: REPORTS / STACKING PLAN REPORTS */}
-        {(activeNav === 'Reports' || activeNav === 'Units' || activeNav === 'Buildings') && (
+        {(activeNav === 'Reports' || activeNav === 'Units') && (
           <StackingPlanReports onBack={() => setActiveNav('Home')} />
         )}
 
@@ -262,24 +354,24 @@ export const Home: React.FC = () => {
           </div>
         )}
 
-        {/* Fallback for other tabs: Leads, Companies, Contacts, Deals, Activities */}
+        {/* Fallback for other tabs */}
         {activeNav !== 'Home' &&
           activeNav !== 'Developments' &&
+          activeNav !== 'Buildings' &&
           activeNav !== 'Attorney Firms' &&
           activeNav !== 'Reports' &&
-          activeNav !== 'Units' &&
-          activeNav !== 'Buildings' && (
+          activeNav !== 'Units' && (
             <div className="bg-white rounded-2xl p-8 border border-slate-100 text-center space-y-3">
               <h3 className="text-lg font-bold text-slate-800">{activeNav}</h3>
               <p className="text-xs text-slate-500 max-w-md mx-auto">
-                Module connected to Realtor360 enterprise backend. You can access Attorney Firms, Developments, Reports, or return to Home.
+                Module connected to Realtor360 enterprise backend. You can access Buildings, Attorney Firms, Developments, Reports, or return to Home.
               </p>
               <div className="flex justify-center gap-2 pt-2">
                 <button
-                  onClick={() => setActiveNav('Attorney Firms')}
+                  onClick={() => setActiveNav('Buildings')}
                   className="px-4 py-2 rounded-lg bg-[#C99B30] text-white text-xs font-semibold hover:bg-[#b58928] cursor-pointer transition-colors"
                 >
-                  Explore Attorney Firms
+                  Explore Buildings
                 </button>
                 <button
                   onClick={() => setActiveNav('Developments')}
