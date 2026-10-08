@@ -1,5 +1,5 @@
-import React, { useState } from 'react'
-import { Search, MoreHorizontal, Menu, X } from 'lucide-react'
+import React, { useState, useRef, useEffect } from 'react'
+import { Search, MoreHorizontal, Menu, X, User, Settings, LogOut } from 'lucide-react'
 
 const NAV_ITEMS = [
   'Home',
@@ -18,14 +18,41 @@ const NAV_ITEMS = [
 interface NavbarProps {
   activeItem?: string
   onSelectItem?: (item: string) => void
+  onUserProfileClick?: () => void
+  onSettingsClick?: () => void
+  onSignOutClick?: () => void
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
   activeItem: controlledActiveItem,
   onSelectItem,
+  onUserProfileClick,
+  onSettingsClick,
+  onSignOutClick,
 }) => {
   const [internalActive, setInternalActive] = useState('Home')
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const [profileMenuOpen, setProfileMenuOpen] = useState(false)
+  const profileMenuRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (profileMenuRef.current && !profileMenuRef.current.contains(event.target as Node)) {
+        setProfileMenuOpen(false)
+      }
+    }
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setProfileMenuOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    document.addEventListener('keydown', handleKeyDown)
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+      document.removeEventListener('keydown', handleKeyDown)
+    }
+  }, [])
 
   const activeItem = controlledActiveItem ?? internalActive
 
@@ -117,13 +144,82 @@ export const Navbar: React.FC<NavbarProps> = ({
             <Search className="w-3.5 h-3.5 text-slate-600 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
           </div>
 
-          {/* User Profile Avatar */}
-          <div className="flex items-center">
-            <img
-              src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=120&auto=format&fit=crop&q=80"
-              alt="User Profile"
-              className="w-8 h-8 rounded-full object-cover border border-slate-200 cursor-pointer hover:ring-2 hover:ring-[#C99B30]/30 transition-all"
-            />
+          {/* User Profile Avatar with Dropdown */}
+          <div className="relative" ref={profileMenuRef}>
+            <button
+              type="button"
+              id="profile-menu-button"
+              onClick={() => setProfileMenuOpen((prev) => !prev)}
+              className="flex items-center gap-1.5 p-1 rounded-full hover:bg-slate-100 transition-all focus:outline-none cursor-pointer"
+              aria-expanded={profileMenuOpen}
+              aria-haspopup="true"
+              title="Account Menu"
+            >
+              <img
+                src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=120&auto=format&fit=crop&q=80"
+                alt="User Profile"
+                className="w-8 h-8 rounded-full object-cover border border-slate-200"
+              />
+              <svg
+                className={`w-2.5 h-2 text-slate-700 fill-current transition-transform duration-200 ${
+                  profileMenuOpen ? 'rotate-180' : ''
+                }`}
+                viewBox="0 0 8 5"
+              >
+                <path d="M4 5L0.5 0.5h7L4 5z" />
+              </svg>
+            </button>
+
+            {/* Profile Dropdown Card */}
+            {profileMenuOpen && (
+              <div
+                id="profile-dropdown-menu"
+                className="absolute right-0 top-full mt-2 w-48 bg-white rounded-2xl shadow-xl border border-slate-100 p-2 z-50 animate-in fade-in zoom-in-95 duration-100"
+                role="menu"
+              >
+                <button
+                  type="button"
+                  id="profile-item-user-profile"
+                  onClick={() => {
+                    setProfileMenuOpen(false)
+                    onUserProfileClick?.()
+                  }}
+                  className="w-full flex items-center gap-3.5 px-3 py-2.5 rounded-xl text-xs font-medium text-slate-700 hover:bg-slate-100 hover:text-slate-900 transition-colors cursor-pointer text-left"
+                  role="menuitem"
+                >
+                  <User className="w-4 h-4 text-slate-700 shrink-0" />
+                  <span>User Profile</span>
+                </button>
+
+                <button
+                  type="button"
+                  id="profile-item-settings"
+                  onClick={() => {
+                    setProfileMenuOpen(false)
+                    onSettingsClick?.()
+                  }}
+                  className="w-full flex items-center gap-3.5 px-3 py-2.5 rounded-xl text-xs font-medium text-slate-700 hover:bg-slate-100 hover:text-slate-900 transition-colors cursor-pointer text-left"
+                  role="menuitem"
+                >
+                  <Settings className="w-4 h-4 text-slate-700 shrink-0" />
+                  <span>Settings</span>
+                </button>
+
+                <button
+                  type="button"
+                  id="profile-item-signout"
+                  onClick={() => {
+                    setProfileMenuOpen(false)
+                    onSignOutClick?.()
+                  }}
+                  className="w-full flex items-center gap-3.5 px-3 py-2.5 rounded-xl text-xs font-medium text-slate-700 hover:bg-slate-100 hover:text-slate-900 transition-colors cursor-pointer text-left"
+                  role="menuitem"
+                >
+                  <LogOut className="w-4 h-4 text-slate-700 shrink-0" />
+                  <span>Sign out</span>
+                </button>
+              </div>
+            )}
           </div>
 
           {/* Mobile hamburger */}
