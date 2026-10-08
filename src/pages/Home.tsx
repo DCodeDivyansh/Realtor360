@@ -70,6 +70,13 @@ import { ActivitiesList } from '../components/activities/ActivitiesList'
 import { ACTIVITIES_DATA } from '../data/activitiesData'
 import type { ActivityFilterState } from '../types/activity'
 
+// Units components
+import { UnitsFilterSidebar } from '../components/units/UnitsFilterSidebar'
+import { UnitsList } from '../components/units/UnitsList'
+import { UnitDetails } from '../components/units/UnitDetails'
+import { UNITS_DATA } from '../data/unitsData'
+import type { UnitFilterState, UnitItem } from '../types/unit'
+
 const INITIAL_DEV_FILTERS: DevelopmentFilterState = {
   searchQuery: '',
   cities: [],
@@ -141,6 +148,17 @@ const INITIAL_ACTIVITY_FILTERS: ActivityFilterState = {
   searchQuery: '',
 }
 
+const INITIAL_UNIT_FILTERS: UnitFilterState = {
+  developments: [],
+  buildings: [],
+  statuses: [],
+  unitTypes: [],
+  areaRanges: [],
+  priceRanges: [],
+  facings: [],
+  searchQuery: '',
+}
+
 export const Home: React.FC = () => {
   const [activeNav, setActiveNav] = useState('Home')
 
@@ -184,6 +202,11 @@ export const Home: React.FC = () => {
   const [activityFilters, setActivityFilters] = useState<ActivityFilterState>(INITIAL_ACTIVITY_FILTERS)
   const [mobileActivityFilterOpen, setMobileActivityFilterOpen] = useState(false)
 
+  // Units state
+  const [selectedUnit, setSelectedUnit] = useState<UnitItem | null>(null)
+  const [unitFilters, setUnitFilters] = useState<UnitFilterState>(INITIAL_UNIT_FILTERS)
+  const [mobileUnitFilterOpen, setMobileUnitFilterOpen] = useState(false)
+
   // Handle switching navigation tabs
   const handleNavSelect = (item: string) => {
     setActiveNav(item)
@@ -193,6 +216,7 @@ export const Home: React.FC = () => {
     if (item === 'Contacts' && !selectedContact) setSelectedContact(null)
     if (item === 'Leads' && !selectedLead) setSelectedLead(null)
     if (item === 'Companies' && !selectedCompany) setSelectedCompany(null)
+    if (item === 'Units' && !selectedUnit) setSelectedUnit(null)
     if (item === 'Deals' && !selectedDeal) {
       setSelectedDeal(null)
       setDealSubView('details')
@@ -304,6 +328,17 @@ export const Home: React.FC = () => {
     if (activityFilters.linkedWith.length > 0 && !activityFilters.linkedWith.includes(act.linkedType)) return false
     if (activityFilters.priorities.length > 0 && !activityFilters.priorities.includes(act.priority)) return false
     if (activityFilters.owners.length > 0 && !activityFilters.owners.includes(act.assignedTo)) return false
+    return true
+  })
+
+  // Filter units
+  const filteredUnits = UNITS_DATA.filter((unit) => {
+    if (unitFilters.developments.length > 0 && !unitFilters.developments.includes(unit.development)) return false
+    if (unitFilters.buildings.length > 0 && !unitFilters.buildings.includes(unit.building)) return false
+    if (unitFilters.statuses.length > 0 && !unitFilters.statuses.includes(unit.status)) return false
+    if (unitFilters.unitTypes.length > 0 && !unitFilters.unitTypes.includes(unit.type)) return false
+    if (unitFilters.facings.length > 0 && !unitFilters.facings.includes(unit.facing)) return false
+    if (unitFilters.searchQuery && !unit.name.toLowerCase().includes(unitFilters.searchQuery.toLowerCase())) return false
     return true
   })
 
@@ -722,8 +757,58 @@ export const Home: React.FC = () => {
           </div>
         )}
 
+        {/* VIEW: UNITS */}
+        {activeNav === 'Units' && (
+          <div>
+            {selectedUnit ? (
+              /* Unit Details View */
+              <UnitDetails
+                unit={selectedUnit}
+                onBack={() => setSelectedUnit(null)}
+              />
+            ) : (
+              /* Units List with Filter Sidebar */
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-5">
+                {/* Desktop Left Sidebar */}
+                <div className="hidden lg:block lg:col-span-3">
+                  <UnitsFilterSidebar
+                    filters={unitFilters}
+                    onFilterChange={setUnitFilters}
+                    onApplyFilters={() => {}}
+                    onResetFilters={() => setUnitFilters(INITIAL_UNIT_FILTERS)}
+                  />
+                </div>
+
+                {/* Mobile Filter Drawer */}
+                {mobileUnitFilterOpen && (
+                  <div className="lg:hidden col-span-12">
+                    <UnitsFilterSidebar
+                      filters={unitFilters}
+                      onFilterChange={setUnitFilters}
+                      onApplyFilters={() => setMobileUnitFilterOpen(false)}
+                      onResetFilters={() => {
+                        setUnitFilters(INITIAL_UNIT_FILTERS)
+                        setMobileUnitFilterOpen(false)
+                      }}
+                    />
+                  </div>
+                )}
+
+                {/* Main List */}
+                <div className="lg:col-span-9">
+                  <UnitsList
+                    units={filteredUnits}
+                    onSelectUnit={(u) => setSelectedUnit(u)}
+                    onToggleMobileFilter={() => setMobileUnitFilterOpen(!mobileUnitFilterOpen)}
+                  />
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
         {/* VIEW: REPORTS / STACKING PLAN REPORTS */}
-        {(activeNav === 'Reports' || activeNav === 'Units') && (
+        {activeNav === 'Reports' && (
           <StackingPlanReports onBack={() => setActiveNav('Home')} />
         )}
 
